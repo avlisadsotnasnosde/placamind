@@ -12,6 +12,8 @@ import {
     Button,
     Typography,
 } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 
 type Placa = {
     placa: string;
@@ -82,14 +84,37 @@ export default function PlacasTable() {
     };
 
     const editarDetalhes = async (placa: string) => {
-        const novosDetalhes = prompt("Digite os novos detalhes:");
-        if (novosDetalhes) {
-            // Aqui você pode implementar uma rota PUT futuramente
-            setPlacas(
-                placas.map((p) =>
-                    p.placa === placa ? { ...p, detalhes: novosDetalhes } : p
-                )
-            );
+        const registroAtual = placas.find((p) => p.placa === placa);
+        const detalhesAntigos = registroAtual?.detalhes || "";
+
+        const novosDetalhes = prompt("Editar detalhes:", detalhesAntigos);
+
+        if (novosDetalhes && novosDetalhes !== detalhesAntigos) {
+            try {
+                const res = await fetch("/api/placas", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ placa, detalhes: novosDetalhes }),
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    setPlacas(
+                        placas.map((p) =>
+                            p.placa === placa
+                                ? { ...p, detalhes: novosDetalhes }
+                                : p
+                        )
+                    );
+                    alert("Detalhes atualizados com sucesso!");
+                } else {
+                    alert(data.error || "Erro ao atualizar");
+                }
+            } catch (err) {
+                console.error("Erro ao enviar PUT:", err);
+                alert("Erro de rede");
+            }
         }
     };
 
@@ -154,15 +179,16 @@ export default function PlacasTable() {
                                 <TableCell align="left">{p.detalhes}</TableCell>
                                 <TableCell align="center">
                                     <Button
+                                        color="info"
                                         onClick={() => editarDetalhes(p.placa)}
                                     >
-                                        Editar
+                                        <EditIcon />
                                     </Button>
                                     <Button
                                         color="error"
                                         onClick={() => removerPlaca(p.placa)}
                                     >
-                                        Remover
+                                        <HighlightOffIcon />
                                     </Button>
                                 </TableCell>
                             </TableRow>

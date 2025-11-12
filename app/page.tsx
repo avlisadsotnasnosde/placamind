@@ -15,7 +15,7 @@ export default function Home() {
             <Switch />
             <Image src="/bigwhite.png" width={120} height={120} alt="Logo" />
             <Typography variant="h4" gutterBottom>
-                Controle de Placas
+                PLACAS-MIND
             </Typography>
             <PlacasTable />
         </Container>

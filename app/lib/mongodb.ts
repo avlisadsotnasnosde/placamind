@@ -28,5 +28,5 @@ if (process.env.NODE_ENV === "development") {
 } else {
     client = new MongoClient(uri, options);
 }
-
+// MONGODB_URI="mongodb+srv://Vercel-Admin-placamind:NO1duw3lKJr3jGMn@placamind.9n9mbzz.mongodb.net/?retryWrites=true&w=majority"
 export default client;

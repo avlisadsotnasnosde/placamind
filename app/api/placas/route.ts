@@ -96,3 +96,43 @@ export async function DELETE(req: NextRequest) {
         );
     }
 }
+
+export async function PUT(req: NextRequest) {
+    try {
+        const { placa, detalhes } = await req.json();
+
+        if (!placa || !detalhes) {
+            return NextResponse.json(
+                { error: "Dados incompletos" },
+                { status: 400 }
+            );
+        }
+
+        await client.connect();
+        const db = client.db("placamind");
+        const collection = db.collection("placamind");
+
+        const resultado = await collection.updateOne(
+            { placa },
+            { $set: { detalhes } }
+        );
+
+        if (resultado.matchedCount === 0) {
+            return NextResponse.json(
+                { error: "Placa não encontrada" },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json(
+            { message: "Detalhes atualizados com sucesso" },
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error("Erro ao atualizar dados:", error);
+        return NextResponse.json(
+            { error: "Erro interno no servidor" },
+            { status: 500 }
+        );
+    }
+}
