@@ -13,6 +13,10 @@ import {
     Typography,
     Snackbar,
     Alert,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
@@ -26,15 +30,15 @@ export default function PlacasTable() {
     const [placas, setPlacas] = useState<Placa[]>([]);
     const [filtro, setFiltro] = useState("");
     const [novoDetalhe, setNovoDetalhe] = useState("");
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: "success" | "error";
-    }>({
+    const [snackbar, setSnackbar] = useState({
         open: false,
         message: "",
-        severity: "success",
+        severity: "success" as "success" | "error",
     });
+
+    const [modalAberto, setModalAberto] = useState(false);
+    const [placaEditando, setPlacaEditando] = useState("");
+    const [detalhesEditando, setDetalhesEditando] = useState("");
 
     useEffect(() => {
         fetch("/api/placas/")
@@ -113,18 +117,23 @@ export default function PlacasTable() {
         }
     };
 
-    const editarDetalhes = async (placa: string) => {
-        const registroAtual = placas.find((p) => p.placa === placa);
-        const detalhesAntigos = registroAtual?.detalhes || "";
+    const abrirModalEdicao = (placa: string) => {
+        const registro = placas.find((p) => p.placa === placa);
+        setPlacaEditando(placa);
+        setDetalhesEditando(registro?.detalhes || "");
+        setModalAberto(true);
+    };
 
-        const novosDetalhes = prompt("Editar detalhes:", detalhesAntigos);
-
-        if (novosDetalhes && novosDetalhes !== detalhesAntigos) {
+    const salvarEdicao = async () => {
+        if (detalhesEditando.trim()) {
             try {
                 const res = await fetch("/api/placas/", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ placa, detalhes: novosDetalhes }),
+                    body: JSON.stringify({
+                        placa: placaEditando,
+                        detalhes: detalhesEditando,
+                    }),
                 });
 
                 const data = await res.json();
@@ -132,8 +141,8 @@ export default function PlacasTable() {
                 if (res.ok) {
                     setPlacas(
                         placas.map((p) =>
-                            p.placa === placa
-                                ? { ...p, detalhes: novosDetalhes }
+                            p.placa === placaEditando
+                                ? { ...p, detalhes: detalhesEditando }
                                 : p
                         )
                     );
@@ -141,6 +150,7 @@ export default function PlacasTable() {
                         "Detalhes atualizados com sucesso!",
                         "success"
                     );
+                    setModalAberto(false);
                 } else {
                     showSnackbar(data.error || "Erro ao atualizar", "error");
                 }
@@ -169,10 +179,15 @@ export default function PlacasTable() {
             />
 
             {placasFiltradas.length === 0 && filtro.trim() && !placaExiste && (
-                <Box className="space-y-2">
-                    <Typography className="py-3">
-                        Nenhuma placa encontrada. Deseja cadastrar
-                        <strong>{filtro}</strong>?
+                <Box className="space-y-5">
+                    <Typography variant="h6" color="error" sx={{ margin: 1 }}>
+                        Placa não encontrada:
+                    </Typography>
+                    <Typography variant="h5" sx={{ margin: 1 }}>
+                        <strong>{filtro}</strong>
+                    </Typography>
+                    <Typography variant="h6" color="error" sx={{ margin: 1 }}>
+                        Deseja cadastrar?
                     </Typography>
                     <TextField
                         label="Detalhes da nova placa"
@@ -180,11 +195,20 @@ export default function PlacasTable() {
                         fullWidth
                         value={novoDetalhe}
                         onChange={(e) => setNovoDetalhe(e.target.value)}
+                        inputProps={{
+                            style: {
+                                textAlign: "center",
+                                letterSpacing: "0.05em",
+                                textTransform: "capitalize",
+                            },
+                        }}
                     />
                     <Button
                         variant="contained"
+                        color="info"
                         onClick={adicionarPlaca}
                         disabled={!novoDetalhe.trim()}
+                        sx={{ margin: 2 }}
                     >
                         Cadastrar
                     </Button>
@@ -208,7 +232,9 @@ export default function PlacasTable() {
                                 <TableCell align="center">
                                     <Button
                                         color="info"
-                                        onClick={() => editarDetalhes(p.placa)}
+                                        onClick={() =>
+                                            abrirModalEdicao(p.placa)
+                                        }
                                     >
                                         <EditIcon />
                                     </Button>
@@ -224,6 +250,50 @@ export default function PlacasTable() {
                     </TableBody>
                 </Table>
             )}
+
+            <Dialog
+                open={modalAberto}
+                onClose={() => setModalAberto(false)}
+                onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                        setModalAberto(false);
+                    }
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        salvarEdicao();
+                    }
+                }}
+            >
+                <DialogTitle>Editar detalhes da placa</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        label="Detalhes"
+                        fullWidth
+                        multiline
+                        value={detalhesEditando}
+                        onChange={(e) => setDetalhesEditando(e.target.value)}
+                        error={!detalhesEditando.trim()}
+                        helperText={
+                            !detalhesEditando.trim()
+                                ? "Este campo não pode estar vazio."
+                                : ""
+                        }
+                        autoFocus
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setModalAberto(false)}>
+                        Cancelar
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={salvarEdicao}
+                        disabled={!detalhesEditando.trim()}
+                    >
+                        Salvar
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <Snackbar
                 open={snackbar.open}
