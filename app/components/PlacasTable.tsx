@@ -170,8 +170,8 @@ export default function PlacasTable() {
 
             {placasFiltradas.length === 0 && filtro.trim() && !placaExiste && (
                 <Box className="space-y-2">
-                    <Typography>
-                        Nenhuma placa encontrada. Deseja cadastrar{" "}
+                    <Typography className="py-3">
+                        Nenhuma placa encontrada. Deseja cadastrar
                         <strong>{filtro}</strong>?
                     </Typography>
                     <TextField
