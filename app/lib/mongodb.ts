@@ -1,12 +1,10 @@
-import { strict } from "assert";
 import { MongoClient, ServerApiVersion } from "mongodb";
-import { deprecate } from "util";
 
-if (!process.env.MONGODB_URL) {
-    throw new Error("MONGODB Connection String not defined");
+const uri = process.env.MONGODB_URL;
+if (!uri) {
+    throw new Error("❌ MONGODB_URL não está definida no ambiente.");
 }
 
-const url = process.env.MONGODB_URL;
 const options = {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -17,17 +15,18 @@ const options = {
 
 let client: MongoClient;
 
-if (process.env.NODE_ENV === "development") {
-    let globalWithMongo = global as typeof globalThis & {
-        _mongoClient?: MongoClient;
-    };
+declare global {
+    // Garante que o tipo seja reconhecido no ambiente dev
+    var _mongoClient: MongoClient | undefined;
+}
 
-    if (!globalWithMongo._mongoClient) {
-        globalWithMongo._mongoClient = new MongoClient(url, options);
+if (process.env.NODE_ENV === "development") {
+    if (!global._mongoClient) {
+        global._mongoClient = new MongoClient(uri, options);
     }
-    client = globalWithMongo._mongoClient;
+    client = global._mongoClient;
 } else {
-    client = new MongoClient(url, options);
+    client = new MongoClient(uri, options);
 }
 
 export default client;
