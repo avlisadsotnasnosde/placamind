@@ -11,6 +11,8 @@ import {
     TableRow,
     Button,
     Typography,
+    Snackbar,
+    Alert,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
@@ -24,13 +26,33 @@ export default function PlacasTable() {
     const [placas, setPlacas] = useState<Placa[]>([]);
     const [filtro, setFiltro] = useState("");
     const [novoDetalhe, setNovoDetalhe] = useState("");
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: "success" | "error";
+    }>({
+        open: false,
+        message: "",
+        severity: "success",
+    });
 
     useEffect(() => {
         fetch("/api/placas")
             .then((res) => res.json())
-            .then((data) => setPlacas(data.data)) // ajustado para acessar `data.data`
-            .catch((err) => console.error("Erro ao buscar placas:", err));
+            .then((data) => setPlacas(data.data))
+            .catch((err) => {
+                console.error("Erro ao buscar placas:", err);
+                showSnackbar("Erro ao buscar placas", "error");
+            });
     }, []);
+
+    const showSnackbar = (message: string, severity: "success" | "error") => {
+        setSnackbar({ open: true, message, severity });
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+    };
 
     const placasFiltradas = placas.filter((p) =>
         p.placa.toLowerCase().includes(filtro.toLowerCase())
@@ -54,12 +76,18 @@ export default function PlacasTable() {
                 if (res.ok) {
                     setPlacas([...placas, nova]);
                     setNovoDetalhe("");
+                    setFiltro("");
+                    showSnackbar("Placa cadastrada com sucesso!", "success");
                 } else {
                     const erro = await res.json();
-                    alert(erro.error || "Erro ao cadastrar placa");
+                    showSnackbar(
+                        erro.error || "Erro ao cadastrar placa",
+                        "error"
+                    );
                 }
             } catch (err) {
                 console.error("Erro ao cadastrar placa:", err);
+                showSnackbar("Erro de rede ao cadastrar placa", "error");
             }
         }
     };
@@ -74,12 +102,14 @@ export default function PlacasTable() {
 
             if (res.ok) {
                 setPlacas(placas.filter((p) => p.placa !== placa));
+                showSnackbar("Placa removida com sucesso!", "success");
             } else {
                 const erro = await res.json();
-                alert(erro.error || "Erro ao remover placa");
+                showSnackbar(erro.error || "Erro ao remover placa", "error");
             }
         } catch (err) {
             console.error("Erro ao remover placa:", err);
+            showSnackbar("Erro de rede ao remover placa", "error");
         }
     };
 
@@ -107,41 +137,39 @@ export default function PlacasTable() {
                                 : p
                         )
                     );
-                    alert("Detalhes atualizados com sucesso!");
+                    showSnackbar(
+                        "Detalhes atualizados com sucesso!",
+                        "success"
+                    );
                 } else {
-                    alert(data.error || "Erro ao atualizar");
+                    showSnackbar(data.error || "Erro ao atualizar", "error");
                 }
             } catch (err) {
                 console.error("Erro ao enviar PUT:", err);
-                alert("Erro de rede");
+                showSnackbar("Erro de rede ao atualizar", "error");
             }
         }
     };
 
     return (
-        <div className="space-y-4 ">
+        <Box className="space-y-4">
             <TextField
                 label="Buscar placa"
                 variant="outlined"
                 fullWidth
-                sx={{
-                    textAlign: "center", // Centraliza o texto digitado
-                    letterSpacing: "0.3em", // Espaçamento entre letras
-                    textTransform: "uppercase", // Transforma em maiúsculas
-                }}
                 inputProps={{
-                    sx: {
-                        textAlign: "center", // Centraliza o texto digitado
-                        letterSpacing: "0.3em", // Espaçamento entre letras
-                        textTransform: "uppercase", // Transforma em maiúsculas
+                    style: {
+                        textAlign: "center",
+                        letterSpacing: "0.3em",
+                        textTransform: "uppercase",
                     },
                 }}
                 value={filtro}
-                onChange={(e) => setFiltro(e.target.value)}
+                onChange={(e) => setFiltro(e.target.value.toUpperCase())}
             />
 
             {placasFiltradas.length === 0 && filtro.trim() && !placaExiste && (
-                <div className="space-y-2">
+                <Box className="space-y-2">
                     <Typography>
                         Nenhuma placa encontrada. Deseja cadastrar{" "}
                         <strong>{filtro}</strong>?
@@ -160,7 +188,7 @@ export default function PlacasTable() {
                     >
                         Cadastrar
                     </Button>
-                </div>
+                </Box>
             )}
 
             {placasFiltradas.length > 0 && (
@@ -173,8 +201,8 @@ export default function PlacasTable() {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {placasFiltradas.map((p, i) => (
-                            <TableRow key={i}>
+                        {placasFiltradas.map((p) => (
+                            <TableRow key={p.placa}>
                                 <TableCell align="center">{p.placa}</TableCell>
                                 <TableCell align="left">{p.detalhes}</TableCell>
                                 <TableCell align="center">
@@ -196,6 +224,21 @@ export default function PlacasTable() {
                     </TableBody>
                 </Table>
             )}
-        </div>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            >
+                <Alert
+                    onClose={handleCloseSnackbar}
+                    severity={snackbar.severity}
+                    sx={{ width: "100%" }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
+        </Box>
     );
 }
