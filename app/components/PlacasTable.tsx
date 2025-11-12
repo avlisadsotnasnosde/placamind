@@ -37,7 +37,7 @@ export default function PlacasTable() {
     });
 
     useEffect(() => {
-        fetch("/api/placas")
+        fetch("../api/placas/")
             .then((res) => res.json())
             .then((data) => setPlacas(data.data))
             .catch((err) => {
@@ -67,7 +67,7 @@ export default function PlacasTable() {
             const nova = { placa: filtro.toUpperCase(), detalhes: novoDetalhe };
 
             try {
-                const res = await fetch("/api/placas", {
+                const res = await fetch("../api/placas/", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(nova),
@@ -94,7 +94,7 @@ export default function PlacasTable() {
 
     const removerPlaca = async (placa: string) => {
         try {
-            const res = await fetch("/api/placas", {
+            const res = await fetch("../api/placas/", {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ placa }),
@@ -121,7 +121,7 @@ export default function PlacasTable() {
 
         if (novosDetalhes && novosDetalhes !== detalhesAntigos) {
             try {
-                const res = await fetch("/api/placas", {
+                const res = await fetch("../api/placas/", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ placa, detalhes: novosDetalhes }),
